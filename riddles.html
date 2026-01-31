@@ -58,6 +58,19 @@ main {
 	text-decoration-style: dotted;
 }
 
+.status-bar {
+	display: flex;
+	justify-content: center;
+	gap: 2em;
+	font-size: 1.5em;
+	font-weight: bold;
+	margin: 0.5em 0;
+}
+.status-bar span {
+	min-width: 4em;
+	text-align: center;
+}
+
 .controls {
 	margin: 1em;
 
@@ -231,6 +244,11 @@ dialog button:hover {
 	</div>
 </div>
 
+<div class="status-bar">
+	<span id="timer">⏳ 20s</span>
+	<span id="score">🏆 0</span>
+</div>
+
 <!-- Test form to get classes -->
 <!--
 <form action="/classes" method="get">
@@ -310,6 +328,9 @@ const strokes = [];		// Completed strokes (each stroke is an array of points, ea
 const activeStrokes = new Map(); // Active strokes keyed by pointerId
 let drawing_class = null;
 let recognized_class = null;
+let timer = null;
+let timeLeft = 20;
+let totalScore = 0;
 let config = {
 	classes: [],
 };		// Fetch from server
@@ -652,11 +673,36 @@ async function locally_classify_strokes() {
 	return results;
 }
 
+function startTimer() {
+	clearInterval(timer);
+	timeLeft = 20;
+	document.querySelector("#timer").innerText = "⏳ " + timeLeft + "s";
+	timer = setInterval(tick, 1000);
+}
+
+function tick() {
+	timeLeft -= 1;
+	document.querySelector("#timer").innerText = "⏳ " + timeLeft + "s";
+	if (timeLeft <= 0) {
+		handleTimeout();
+	}
+}
+
+function handleTimeout() {
+	clearInterval(timer);
+	timer = null;
+	show_results("⏰ Time's Up!");
+	const nextBtn = document.querySelector("#nextButton");
+	nextBtn.innerText = "🤷 Give Up";
+	nextBtn.disabled = false;
+}
+
 // ------
 let shuffled_classes = [];
 let drawing_count = 1;
 function next_drawing() {
 	classify_mode = false;
+	clearInterval(timer);
 
 	if (finished) {
 		started();
@@ -711,6 +757,9 @@ function next_drawing() {
 	}
 
 	update_instructions();
+	if (!finished && drawing_class && !revealed) {
+		startTimer();
+	}
 }
 
 function update_instructions() {
@@ -727,6 +776,7 @@ function update_instructions() {
 		document.querySelector("#nextButton").innerText = "➡️ Resume";
 	} else if (finished) {
 		message = config.finishMessage ? config.finishMessage : `🎉 You drew all ${config.maxCount}, thanks for playing!`;
+		message += `<br>Final Score: 🏆 ${totalScore}`;
 		if (config && config.noRestart) {
 			document.querySelector("#nextButton").innerText = "🏁 Finish";
 			nextDisabled = true;
@@ -798,7 +848,18 @@ function show_results(results) {
 		} else if (!recognized_class) {
 			resultsDiv.innerHTML = prefix + `<h2>😢 Sorry, I could not guess.</h2>`;
 		} else if (correct) {
-			resultsDiv.innerHTML = prefix + `<h2>✅ Correct! It was: ${recognized_class}!</h2>`;
+			if (timer) {
+				clearInterval(timer);
+				timer = null;
+				const roundScore = 50 + (timeLeft * 10);
+				totalScore += roundScore;
+				document.querySelector("#score").innerText = "🏆 " + totalScore;
+				resultsDiv.innerHTML = prefix + `<h2>✅ Correct! +${roundScore} pts! (${recognized_class})</h2>`;
+			} else if (timeLeft <= 0) {
+				resultsDiv.innerHTML = prefix + `<h2>⏰ Correct, but out of time! (${recognized_class})</h2>`;
+			} else {
+				resultsDiv.innerHTML = prefix + `<h2>✅ Correct! (${recognized_class})</h2>`;
+			}
 		} else {
 			resultsDiv.innerHTML = `<h2>❌ Oops, I thought it was: ${recognized_class}.</h2>`;
 		}
@@ -966,6 +1027,8 @@ function started() {
 	finished = false;
 	classify_mode = false;
 	drawing_count = 1;
+	totalScore = 0;
+	document.querySelector("#score").innerText = "🏆 " + totalScore;
 	drawing_class = null;
 	recognized_class = null;
 	clear();
