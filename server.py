@@ -24,6 +24,11 @@ def home():
     return send_from_directory('.', 'index.html')
 
 
+@app.route('/riddles.html')
+def riddles():
+    return send_from_directory('.', 'riddles.html')
+
+
 # Web-based recognizer
 @app.route('/onnx-recognizer.js')
 def onnx_recognizer_js():

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:;base64,">
-<title>Doodle with AI!</title>
+<title>Riddle Mode - Doodle with AI!</title>
 <style>
 body {
 	font-family: sans-serif;
@@ -224,9 +224,10 @@ dialog button:hover {
 
 <main>
 <div class="heading">
-	<a href="https://github.com/CCAI-CDT/QuickDraw" target="_blank">Doodle with AI!</a>
+	<a href="index.html">Doodle with AI!</a> <!-- Link back to main -->
+	<span> - Riddle Mode</span>
 	<div style="font-size: 0.5em; font-weight: normal; margin-top: 5px;">
-		<a href="riddles.html">🧩 Riddle Mode</a> | <a href="export.html" target="_blank">Manage Logs</a>
+		<a href="export.html" target="_blank">Manage Logs</a>
 	</div>
 </div>
 
@@ -259,9 +260,10 @@ dialog button:hover {
 <div class="results"></div>
 
 <dialog>
-<h1>Doodle with AI!</h1>
+<h1>Riddle Mode!</h1>
 <div>
-	<p>Welcome to <em>Doodle with AI!</em></p>
+	<p>Welcome to <em>Riddle Mode!</em></p>
+    <p>Read the riddle and try to draw the answer.</p>
 </div>
 <div class="dialog_controls">
 	<button id="start">Start Drawing!</button>
@@ -285,7 +287,8 @@ function logInteraction(strokes, target, results) {
 			timestamp: new Date().toISOString(),
 			strokes: strokesCopy,
 			target: target,
-			results: results
+			results: results,
+            mode: 'riddle'
 		};
 
 		logs.push(entry);
@@ -312,6 +315,8 @@ let config = {
 };		// Fetch from server
 let classify_mode = false;	// Classify mode for testing
 let finished = false;
+let riddle_map = {}; // Map of class name to riddle
+let revealed = false; // Whether the current riddle answer is revealed
 
 // --- LOCAL RECOGNIZER ---
 const IMAGE_SIZE = 28;
@@ -552,7 +557,7 @@ function image_to_data(imageData) {
 			data[y * IMAGE_SIZE + x] = grey;
 		}
 	}
-	return data;	
+	return data;
 }
 
 function canvas_to_image_data(canvas) {
@@ -632,6 +637,8 @@ async function locally_classify_image(imageData) {
 }
 
 async function locally_classify_strokes() {
+    if (revealed) return; // Do not classify if revealed
+
 	show_results('💭 Redrawing...');
 
 	let imageData = null;
@@ -650,11 +657,21 @@ let shuffled_classes = [];
 let drawing_count = 1;
 function next_drawing() {
 	classify_mode = false;
-	
+
 	if (finished) {
 		started();
 		return;
 	}
+
+    // Check if we are revealing
+    if (drawing_class && recognized_class !== drawing_class && !revealed && !finished) {
+        // User clicked Give Up
+        revealed = true;
+        show_results(`<h2>The answer was: ${drawing_class}</h2>`);
+        update_instructions();
+        return;
+    }
+    revealed = false;
 
 	// Count correct drawings
 	if (drawing_class && recognized_class === drawing_class) {
@@ -727,9 +744,14 @@ function update_instructions() {
 			} else {
 				document.querySelector("#nextButton").innerText = "✅ Next";	// ➡️
 			}
+        } else if (revealed) {
+            message = `<span class="msg-draw">The answer was:</span><br><span class="item">${drawing_class}</span>`;
+            document.querySelector("#nextButton").innerText = "➡️ Next";
 		} else {
-			message = `<span class="msg-draw">✏️ Draw</span> <span class="msg-count">(${drawing_count}${of})</span><br><span class="item${long}">${drawing_class}</span>`;
-			document.querySelector("#nextButton").innerText = "↩️ Skip";
+            // Riddle Mode: Show riddle
+            const riddle = riddle_map[drawing_class] || "Guess what to draw!";
+			message = `<span class="msg-draw">🤔 Riddle:</span> <span class="msg-count">(${drawing_count}${of})</span><br><span class="item long" style="font-size: 1em; white-space: normal;">${riddle}</span>`;
+			document.querySelector("#nextButton").innerText = "🤷 Give Up";
 		}
 	} else {
 		//message = 'Draw one of: ' + config.classes.map(c => `<span class="item">${c}</span>`).join(", ") + '.';
@@ -750,10 +772,11 @@ function clear() {
 
 	const ctx = document.querySelector("canvas").getContext("2d");
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	show_results(null);
+	if (!revealed) show_results(null);
 	strokes.length = 0;
 	activeStrokes.clear();
 	recognized_class = null;
+    // revealed = false; // Don't reset revealed here, only on next_drawing
 }
 
 function show_results(results) {
@@ -775,7 +798,7 @@ function show_results(results) {
 		} else if (!recognized_class) {
 			resultsDiv.innerHTML = prefix + `<h2>😢 Sorry, I could not guess.</h2>`;
 		} else if (correct) {
-			resultsDiv.innerHTML = prefix + `<h2>✅ Correct! I guessed it was: ${recognized_class}!</h2>`;
+			resultsDiv.innerHTML = prefix + `<h2>✅ Correct! It was: ${recognized_class}!</h2>`;
 		} else {
 			resultsDiv.innerHTML = `<h2>❌ Oops, I thought it was: ${recognized_class}.</h2>`;
 		}
@@ -903,6 +926,8 @@ function translate_coordinates(x, y) {
 }
 
 function startDrawing(pointerId, x, y) {
+    if (revealed) return; // Do not allow drawing if revealed
+
 	const startPoint = translate_coordinates(x, y);
 	activeStrokes.set(pointerId, [startPoint]);
 
@@ -946,12 +971,12 @@ function started() {
 	clear();
 
 	if (config.dialog) {
-		if (config.dialog.title) {
-			document.querySelector("dialog h1").innerHTML = config.dialog.title;
-		}
-		if (config.dialog.content) {
-			document.querySelector("dialog div").innerHTML = config.dialog.content;
-		}
+		// if (config.dialog.title) {
+		// 	document.querySelector("dialog h1").innerHTML = config.dialog.title;
+		// }
+		// if (config.dialog.content) {
+		// 	document.querySelector("dialog div").innerHTML = config.dialog.content;
+		// }
 		if (config.dialog.button) {
 			document.querySelector("dialog button").innerHTML = config.dialog.button;
 		}
@@ -968,6 +993,16 @@ async function run() {
 		last_error = 'Error: Problem loading config: ' + e.reason;
 		show_results();
 	}
+
+    // Build riddle map and Rename classes
+    riddle_map = {};
+    if (config.classes) {
+        for (const cls of config.classes) {
+            const name = config.renamed_classes && config.renamed_classes[cls] ? config.renamed_classes[cls] : cls;
+            riddle_map[name] = config.riddles && config.riddles[cls] ? config.riddles[cls] : "Guess what this is!";
+        }
+    }
+
 	// Rename classes
 	if (config.renamed_classes) {
 		config.classes = config.classes.map(c => config.renamed_classes[c] || c);
