@@ -58,39 +58,37 @@ main {
 	text-decoration-style: dotted;
 }
 
-.status-bar {
-	display: flex;
-	justify-content: center;
-	gap: 2em;
-	font-size: 1.5em;
-	font-weight: bold;
-	margin: 0.5em 0;
-}
-.status-bar span {
-	min-width: 4em;
-	text-align: center;
-}
-
 .controls {
-	margin: 1em;
+	margin: 0.5em 1em;
 
 	display: flex;
 	flex-direction: row;
 
 	align-items: center;
 	justify-content: center;
+	flex-wrap: wrap;
+	gap: 0.5em;
 }
 
 .controls button {
 	font-size: 1em;
-	margin: 0 0.5em;
 	padding: 0.5em 1em;
+	margin: 0;
+}
+
+.controls .status-item {
+	font-weight: bold;
+	font-size: 1.2em;
+	min-width: 3.5em;
+	text-align: center;
+	white-space: nowrap;
 }
 
 .controls .instructions {
 	font-size: 1.5em;
 	flex-grow: 1;
-	width: 100%;
+	width: auto;
+	min-width: 200px;
 	text-align: center;
 }
 
@@ -244,11 +242,6 @@ dialog button:hover {
 	</div>
 </div>
 
-<div class="status-bar">
-	<span id="timer">⏳ 20s</span>
-	<span id="score">🏆 0</span>
-</div>
-
 <!-- Test form to get classes -->
 <!--
 <form action="/classes" method="get">
@@ -266,10 +259,12 @@ dialog button:hover {
 -->
 
 <div class="controls">
+	<span id="timer" class="status-item">⏳ 20s</span>
 	<button id="clearButton">❌ Clear</button> <!-- 🗑️ -->
 	<div class="instructions">-</div>
 	<button class="hidden" id="classifyStrokesButton">❓ Check</button>
 	<button class="hidden" id="classifyImageButton">Check from Image</button>
+	<span id="score" class="status-item">🏆 0</span>
 	<button id="nextButton">-</button>
 </div>
 <div class="drawing">
