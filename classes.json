@@ -32,6 +32,28 @@
         "streetlight": "street lamp",
         "truck": "lorry"
     },
+    "riddles": {
+        "apple": "I can be red or green, I grow on trees, and I keep the doctor away.",
+        "book": "I have pages but no life, a spine but no bones, and stories to tell.",
+        "bowtie": "I am a knot worn around the neck, shaped like a butterfly, often with a tuxedo.",
+        "candle": "I have a wick and wax, I give light when burned, and I melt away.",
+        "cloud": "I float in the sky, fluffy and white or dark and grey, bringing rain.",
+        "cup": "I have a handle and hold your hot tea or coffee.",
+        "door": "I have a handle or knob, and you open me to enter or leave a room.",
+        "envelope": "I hold letters inside me, and you lick me to seal me shut.",
+        "eyeglasses": "I sit on your nose, have two lenses, and help you see clearly.",
+        "guitar": "I have a neck and strings, and you strum me to make music.",
+        "hammer": "I have a heavy metal head and handle, used to drive nails into wood.",
+        "hat": "I sit on top of your head, keeping you warm or shading you from the sun.",
+        "ice cream": "I am cold, sweet, and creamy, served in a cone or bowl, and melt in the heat.",
+        "leaf": "I grow on branches, turn colors in autumn, and fall to the ground.",
+        "scissors": "I have two sharp blades and handles, used to cut paper or cloth.",
+        "star": "I twinkle in the night sky, a giant ball of burning gas far away.",
+        "t-shirt": "I am a simple piece of clothing with short sleeves and a round neck.",
+        "pants": "I have two legs and cover your lower body, fastened at the waist.",
+        "lightning": "I am a sudden flash of bright light in a storm, followed by a loud boom.",
+        "tree": "I have a tall trunk, roots, branches, and leaves, providing shade and oxygen."
+    },
     "ignored_classes": [
         "leaf"
     ],
