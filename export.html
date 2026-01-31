@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doodle with AI! - Data Export</title>
+<style>
+body {
+	font-family: sans-serif;
+	max-width: 800px;
+	margin: auto;
+	padding: 1em;
+	background-color: lightgrey;
+}
+h1 {
+	text-align: center;
+}
+.card {
+	background: white;
+	padding: 2em;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	margin-bottom: 1em;
+}
+button {
+	font-size: 1.1em;
+	padding: 0.5em 1em;
+	cursor: pointer;
+	margin-right: 0.5em;
+    margin-bottom: 0.5em;
+}
+.stats {
+	font-size: 1.2em;
+	margin-bottom: 1em;
+}
+#logData {
+    width: 100%;
+    height: 200px;
+    margin-top: 1em;
+    font-family: monospace;
+}
+.back-link {
+    display: block;
+    margin-top: 1em;
+    text-align: center;
+    font-size: 1.2em;
+}
+</style>
+</head>
+<body>
+
+<h1>Data Export / Import</h1>
+
+<div class="card">
+    <div class="stats">
+        Current Logs: <span id="logCount">0</span>
+    </div>
+
+    <div>
+        <button id="downloadBtn">⬇️ Download JSON</button>
+        <button id="clearBtn" style="background-color: #ffcccc; color: darkred; border: 1px solid red;">🗑️ Clear Logs</button>
+    </div>
+
+    <hr>
+
+    <h3>Import</h3>
+    <p>Select a JSON file to restore logs (this will replace current logs).</p>
+    <input type="file" id="importFile" accept=".json">
+    <button id="importBtn">⬆️ Import</button>
+</div>
+
+<div class="back-link">
+    <a href="index.html">⬅️ Back to Drawing</a>
+</div>
+
+<script>
+const STORAGE_KEY = 'quickdraw_logs';
+
+function getLogs() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    try {
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        console.error("Failed to parse logs", e);
+        return [];
+    }
+}
+
+function updateStats() {
+    const logs = getLogs();
+    document.getElementById('logCount').innerText = logs.length;
+}
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+    const logs = getLogs();
+    const blob = new Blob([JSON.stringify(logs, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // timestamp in filename
+    const now = new Date().toISOString().replace(/[:.]/g, '-');
+    a.download = `quickdraw_logs_${now}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+    if (confirm("Are you sure you want to delete all logs? This cannot be undone.")) {
+        localStorage.removeItem(STORAGE_KEY);
+        updateStats();
+        alert("Logs cleared.");
+    }
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+    const fileInput = document.getElementById('importFile');
+    if (fileInput.files.length === 0) {
+        alert("Please select a file first.");
+        return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!Array.isArray(data)) {
+                throw new Error("JSON is not an array");
+            }
+            if (confirm(`Replace current logs with ${data.length} entries from file?`)) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                updateStats();
+                alert("Import successful.");
+                fileInput.value = ''; // Reset input
+            }
+        } catch (err) {
+            alert("Error importing file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+});
+
+// Init
+updateStats();
+</script>
+
+</body>
+</html>

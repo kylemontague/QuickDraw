@@ -225,6 +225,9 @@ dialog button:hover {
 <main>
 <div class="heading">
 	<a href="https://github.com/CCAI-CDT/QuickDraw" target="_blank">Doodle with AI!</a>
+	<div style="font-size: 0.5em; font-weight: normal; margin-top: 5px;">
+		<a href="export.html" target="_blank">Manage Logs</a>
+	</div>
 </div>
 
 <!-- Test form to get classes -->
@@ -267,6 +270,32 @@ dialog button:hover {
 
 </main>
 <script>
+// Logging
+const LOG_STORAGE_KEY = 'quickdraw_logs';
+
+function logInteraction(strokes, target, results) {
+	try {
+		const stored = localStorage.getItem(LOG_STORAGE_KEY);
+		const logs = stored ? JSON.parse(stored) : [];
+
+		// Deep copy strokes to prevent mutation issues
+		const strokesCopy = JSON.parse(JSON.stringify(strokes));
+
+		const entry = {
+			timestamp: new Date().toISOString(),
+			strokes: strokesCopy,
+			target: target,
+			results: results
+		};
+
+		logs.push(entry);
+		localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+		console.log("Logged interaction", entry);
+	} catch (e) {
+		console.error("Failed to log interaction", e);
+	}
+}
+
 // Config
 const USE_LOCAL_RECOGNIZER = true;
 const RESULTS_TOP_K = 6;
@@ -612,6 +641,7 @@ async function locally_classify_strokes() {
 	}
 
 	const results = await locally_classify_image(imageData);
+	logInteraction(strokes, drawing_class, results);
 	return results;
 }
 
@@ -790,6 +820,7 @@ async function server_classify_strokes() {
 		body: JSON.stringify({ strokes: strokes })
 	});
 	const result = await response.json();
+	logInteraction(strokes, drawing_class, result);
 	show_results(result);
 	return result;
 }
